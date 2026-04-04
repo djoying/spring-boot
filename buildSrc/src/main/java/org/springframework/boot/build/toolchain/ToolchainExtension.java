@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2021 the original author or authors.
+ * Copyright 2012-present the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,29 +17,35 @@
 package org.springframework.boot.build.toolchain;
 
 import org.gradle.api.Project;
+import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.jvm.toolchain.JavaLanguageVersion;
+
+import org.springframework.boot.build.SystemRequirementsExtension;
 
 /**
  * DSL extension for {@link ToolchainPlugin}.
  *
  * @author Christoph Dreis
  */
-public class ToolchainExtension {
-
-	private final Property<JavaLanguageVersion> maximumCompatibleJavaVersion;
+public abstract class ToolchainExtension {
 
 	private final JavaLanguageVersion javaVersion;
 
 	public ToolchainExtension(Project project) {
-		this.maximumCompatibleJavaVersion = project.getObjects().property(JavaLanguageVersion.class);
 		String toolchainVersion = (String) project.findProperty("toolchainVersion");
 		this.javaVersion = (toolchainVersion != null) ? JavaLanguageVersion.of(toolchainVersion) : null;
+		SystemRequirementsExtension systemRequirements = project.getExtensions()
+			.getByType(SystemRequirementsExtension.class);
+		getMinimumCompatibleJavaVersion()
+			.convention(project.provider(() -> JavaLanguageVersion.of(systemRequirements.getJava().getVersion())));
 	}
 
-	public Property<JavaLanguageVersion> getMaximumCompatibleJavaVersion() {
-		return this.maximumCompatibleJavaVersion;
-	}
+	public abstract Property<JavaLanguageVersion> getMinimumCompatibleJavaVersion();
+
+	public abstract Property<JavaLanguageVersion> getMaximumCompatibleJavaVersion();
+
+	public abstract ListProperty<String> getTestJvmArgs();
 
 	JavaLanguageVersion getJavaVersion() {
 		return this.javaVersion;
